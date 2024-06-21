@@ -1,0 +1,70 @@
+---
+title: "lotto"
+format: html
+editor: visual
+---
+
+## 코드 설명
+
+```{r}
+library(magrittr)
+library(httr)
+library(rvest)
+library(stringr)
+library(ggplot2)
+
+url = 'https://www.dhlottery.co.kr/gameResult.do?method=byWin'
+
+arr<-array(0:0, dim=c(45))
+```
+
+필요한 라이브러리와 url, 각 회차의 크롤링 결과를 저장할 길이45를 갖는 1차원 배열
+
+```{r}
+for(i in 900:1124){
+  data_lotto = POST(
+    url, 
+    body = list(
+      drwNo = as.character(i),
+      dwrNoList = as.character(i)
+    )
+  )
+  
+  data_lotto_html = data_lotto %>% read_html()
+  
+  data_lotto_html %>%
+    html_nodes('.num.win') %>%
+    html_text() %>%
+    str_extract_all('\\d+') %>%
+    unlist()->li
+  
+  for(i in li){
+    i=as.numeric(i)
+    arr[i]=arr[i]+1
+  }
+  
+  Sys.sleep(2)
+}
+print(arr)
+```
+
+for문을 통해 임의로 900회부터 1124회까지 크롤링 후 arr의 해당 인텍스인 arr\[i\]를 1증가. sys.sleep으로 delay
+
+## 실행결과
+
+```{text}
+ [1] 28 27 37 27 17 36 34 20 25 24 30 35 36 34 27 36 27 36 26 30 35 36 31 32 20 29 27 23 31 34 30 29
+[33] 33 31 39 33 29 34 24 29 28 28 25 34 34
+```
+
+## 시각화
+
+```{r}
+df <- data.frame(index = 1:45, value = arr)
+
+ggplot(data = df, aes(x = index, y = value)) +
+  geom_bar(stat = "identity") +
+  labs(title = "lotto", x = "번호", y = "빈도")
+```
+
+위의 arr을 df으로 변환 후 ggplot사용해 시각화
